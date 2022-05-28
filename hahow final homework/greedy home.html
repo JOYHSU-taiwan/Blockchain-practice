@@ -1,0 +1,126 @@
+<html>
+
+<head>
+    <title> 作業4 </title>
+</head>
+
+<body>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.3.4/web3.min.js"></script>
+
+    <h1> 畢業作品: 單次分紅 </h1>
+
+    <p>我的地址：<span id="my_address"></span></p>
+    <p>我的餘額：<span id="my_balance"></span> ether </p>
+
+    <hr />
+
+    <p>目前合約金額：<span id="total_balance"></span> ether </p>
+
+    <button id="invest" onclick="invest()"> 投資單次分紅 </button>
+
+    <script>
+        if (typeof web3 !== 'undefined') {
+            web3 = new Web3(web3.currentProvider);
+        } else {
+            alert("please use metamask");
+        }
+
+        var myContract;
+        var coinbase;
+
+        async function printPostsToConsole() {
+
+            web3.eth.requestAccounts();
+
+            //取得帳號
+            coinbase = await web3.eth.getCoinbase();
+
+            //取得帳號餘額
+            var balance = await web3.eth.getBalance(coinbase);
+            $("#my_address").text(coinbase);
+            $("#my_balance").text(web3.utils.fromWei(balance));
+
+            var contract_address = "0x9e35b6823C24980677ADC0dFF1d97f18C0346C57";
+            var contract_abi = [
+                {
+                    "constant": false,
+                    "inputs": [],
+                    "name": "invest",
+                    "outputs": [],
+                    "payable": true,
+                    "stateMutability": "payable",
+                    "type": "function"
+                },
+                {
+                    "inputs": [],
+                    "payable": true,
+                    "stateMutability": "payable",
+                    "type": "constructor"
+                },
+                {
+                    "anonymous": false,
+                    "inputs": [
+                        {
+                            "indexed": false,
+                            "name": "randomNumber",
+                            "type": "uint8"
+                        }
+                    ],
+                    "name": "randomNumberForGame",
+                    "type": "event"
+                },
+                {
+                    "anonymous": false,
+                    "inputs": [
+                        {
+                            "indexed": false,
+                            "name": "fundBack",
+                            "type": "uint256"
+                        },
+                        {
+                            "indexed": false,
+                            "name": "contractBalanceBeforeTransfer",
+                            "type": "uint256"
+                        },
+                        {
+                            "indexed": false,
+                            "name": "contractBalanceAfterTransfer",
+                            "type": "uint256"
+                        }
+                    ],
+                    "name": "investInfo",
+                    "type": "event"
+                }
+            ];
+
+            myContract = new web3.eth.Contract(contract_abi, contract_address);
+
+            //取得合約餘額
+            var balance_contract = await web3.eth.getBalance(contract_address);
+            $("#total_balance").text(web3.utils.fromWei(balance_contract));
+        };
+
+        printPostsToConsole();
+
+
+        // 投資單次分紅
+        function invest() {
+            myContract.methods.invest().send({ from: coinbase, value: "100000000000000000" }).then(function (receipt) {
+                console.log("receipt", receipt);
+                var obj = JSON.parse(JSON.stringify(receipt));
+                var randomNumber = obj.events.randomNumberForGame.returnValues[0];
+                var fundBack = obj.events.investInfo.returnValues[0];
+                alert("You've get " + randomNumber + "0% fund back this time.\n" + "Your fund back amount is totally " + web3.utils.fromWei(fundBack) + " ether.");
+                console.log(obj.events.investInfo.returnValues[0]);
+                location.reload();
+            });
+        }
+
+    </script>
+</body>
+
+</html>
