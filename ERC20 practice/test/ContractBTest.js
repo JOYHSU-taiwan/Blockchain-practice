@@ -72,10 +72,22 @@ describe("ContractB test", function () {
                 await DeployedContractB.setupPool2Owner(addr2.address);
 
                 const amount = 100;
+                await DeployedJoyToken.transfer(DeployedContractB.address, amount);
                 await DeployedContractB.tokenDistribution(amount);
 
                 expect(await DeployedContractB.pool(addr1.address)).to.equal((amount * 6) / 10);
                 expect(await DeployedContractB.pool(addr2.address)).to.equal((amount * 4) / 10);
+            });
+
+        it("Test Case 2: Contract B should not be able to distribute token to pool when token in Contract B is less than (pool 1 amount + pool 2 amount + function input amount)",
+            async function () {
+
+                await DeployedContractB.setupJoyToken(DeployedJoyToken.address);
+                await DeployedContractB.setupPool1Owner(addr1.address);
+                await DeployedContractB.setupPool2Owner(addr2.address);
+
+                const amount = 100;
+                await expect(DeployedContractB.tokenDistribution(amount)).to.revertedWith("Token in Contract insufficient.");
             });
     });
 

@@ -2,6 +2,8 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./library/TransferHelper.sol";
 
 contract ContractB is Ownable {
     constructor() {}
@@ -26,20 +28,17 @@ contract ContractB is Ownable {
 
     // Contract B distribute Token to pool
     function tokenDistribution(uint256 amount) public {
-        pool[pool1_Owner] += (amount * 6) / 10;
-        pool[pool2_Owner] += (amount * 4) / 10;
+        require(pool[pool1_Owner] + pool[pool2_Owner] + amount <= IERC20(JoyToken).balanceOf(address(this)), "Token in Contract insufficient.");
+        uint256 pool1Amount = (amount * 6) / 10;
+        pool[pool1_Owner] += pool1Amount;
+        pool[pool2_Owner] += (amount - pool1Amount);
     }
 
     // Pool Owner withdraw Token to their wallet
     function tokenWithdraw() public {
         uint256 poolBalanceBeforeWithdraw = pool[msg.sender];
-        safeTransfer(JoyToken, msg.sender, poolBalanceBeforeWithdraw);
+        TransferHelper.safeTransfer(JoyToken, msg.sender, poolBalanceBeforeWithdraw);
         pool[msg.sender] -= poolBalanceBeforeWithdraw;
     }
 
-    function safeTransfer(address token, address to, uint256 value) internal {
-        // bytes4(keccak256(bytes('transfer(address,uint256)')));
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))),"TransferHelper: TRANSFER_FAILED");
-    }
 }
